@@ -1,6 +1,7 @@
 import { useState } from "react";
 import alfabeto from "./assets/alfabeto";
 import palavras from "./assets/palavras";
+import removeDiacritics from "./assets/removeDiacritics";
 import styled from 'styled-components';
 import GlobalStyle from "./GlobalStyle";
 
@@ -12,50 +13,53 @@ const imagensForca = importAll(require.context('./assets/img/', false, /\.(png)$
 export default function App() {
     const [numErros, setNumErros] = useState(0)
     const [palavraEscolhida, setPalavraEscolhida] = useState("")
+    const [palavraEmJogo, setPalavraEmJogo] = useState([...palavraEscolhida.split("").map((l) => "_")])
     const [corPalavraEmJogo, setCorPalavraEmJogo] = useState("black")
     const [letrasTestadas, setLetrasTestadas] = useState(alfabeto)
     const [chuteDesabilitado, setChuteDesabilitado] = useState(true)
     const [chute, setChute] = useState("")
-    let palavraEscolhidaArray = palavraEscolhida.split("")
-    let palavraEscondidaArray = palavraEscolhidaArray.map((l) => "_")
-    let palavraEmJogo = [...palavraEscondidaArray]
 
     function iniciarJogo() {
         let novaPalavra = palavras[Math.floor(Math.random() * palavras.length)].toUpperCase()
         setPalavraEscolhida(novaPalavra)
         console.log(novaPalavra)
-        palavraEscolhidaArray = novaPalavra.split("")
-        palavraEscondidaArray = novaPalavra.split("").map((l) => "_")
-        console.log(palavraEscolhidaArray)
-        console.log(palavraEscondidaArray)
+        setPalavraEmJogo(novaPalavra.split("").map((l) => "_"))
         setNumErros(0)
         setLetrasTestadas([])
         setChuteDesabilitado(false)
         setCorPalavraEmJogo("black")
     }
 
-    function checkLetra(l,index) {
-        console.log(l)
-        const letra = l.toUpperCase()
-        if (palavraEscolhidaArray.includes(letra)) {
-            console.log("Acertou a letra: ", letra)
-            palavraEmJogo.map((l,index) => l===letra ? palavraEscolhidaArray[index] : palavraEmJogo[index])
+    function checkLetra(letra) {
+        const letraMaiuscula = letra.toUpperCase()
+        let novaPalavraEmJogo = [...palavraEmJogo]
+        if (palavraEscolhida.split("").includes(letraMaiuscula)) {
+            novaPalavraEmJogo = [...palavraEscolhida.split("").map((l, index) => removeDiacritics(l) === letraMaiuscula ? palavraEscolhida.split("")[index] : palavraEmJogo[index])]
+            setPalavraEmJogo(novaPalavraEmJogo)
+            console.log(novaPalavraEmJogo)
         } else {
-            console.log("A palavra não contém a letra: ", letra)
             setNumErros(numErros + 1)
         }
-        setLetrasTestadas([...letrasTestadas,l])
+        setLetrasTestadas([...letrasTestadas, letra])
+        novaPalavraEmJogo.join(" ") === palavraEscolhida.split("").join(" ") ? ganhou() : (numErros + 1 === 6 ? perdeu() : console.log("Próxima letra"))
     }
 
-    function checkChute() {
-        if (chute.toUpperCase() === palavraEscolhida) {
-            console.log("Venceu!")
-            setCorPalavraEmJogo("green")
-        } else {
-            console.log("Perdeu!")
-            setCorPalavraEmJogo("red")
-            setNumErros(6)
-        }
+    function ganhou() {
+        console.log("Venceu!")
+        setCorPalavraEmJogo("green")
+        setPalavraEmJogo([...palavraEscolhida.split("")])
+        setLetrasTestadas(alfabeto)
+        setChuteDesabilitado(true)
+        setChute("")
+    }
+
+    function perdeu() {
+        console.log("Perdeu!")
+        setCorPalavraEmJogo("red")
+        setPalavraEmJogo([...palavraEscolhida.split("")])
+        setNumErros(6)
+        setLetrasTestadas(alfabeto)
+        setChuteDesabilitado(true)
         setChute("")
     }
 
@@ -69,14 +73,14 @@ export default function App() {
 
             <Jogo>
                 <img src={imagensForca[numErros].default} alt="Imagem da forca" data-identifier='game-image' />
-                <PalavraEmJogo data-identifier='word' color={corPalavraEmJogo}>{palavraEscolhida==="" ? "Clique em 'Escolher Palavra' para jogar" : palavraEmJogo.join(" ")}</PalavraEmJogo>
+                <PalavraEmJogo data-identifier='word' color={corPalavraEmJogo}>{palavraEscolhida === "" ? "Clique em 'Escolher Palavra' para jogar" : palavraEmJogo.join(" ")}</PalavraEmJogo>
             </Jogo>
 
             <Letras>{alfabeto.map(
                 (l, index) =>
                     <BotaoLetra
                         key={index}
-                        onClick={() => checkLetra(l,index)}
+                        onClick={() => checkLetra(l)}
                         disabled={letrasTestadas.includes(l)}
                         data-identifier='letter'>
                         {l.toUpperCase()}
@@ -92,7 +96,7 @@ export default function App() {
                     placeholder="Já sei a palavra!"
                 />
                 <BotaoChutar
-                    onClick={() => checkChute()}
+                    onClick={() => removeDiacritics(chute).toUpperCase() === removeDiacritics(palavraEscolhida).toUpperCase() ? ganhou() : perdeu()}
                     disabled={chuteDesabilitado}
                     data-identifier='guess-button'>
                     Chutar
@@ -146,8 +150,8 @@ const PalavraEmJogo = styled.span`
     font-size: 30px;
     font-weight: 500;
     font-family: 'Quicksand', sans-serif;
-    color: ${(props) => props.color}
-    margin: 20px;
+    color: ${(props) => props.color};
+    margin: 10px;
 `
 const Letras = styled.div`
     display: grid;
