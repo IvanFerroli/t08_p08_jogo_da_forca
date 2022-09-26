@@ -22,7 +22,6 @@ export default function App() {
     function iniciarJogo() {
         let novaPalavra = palavras[Math.floor(Math.random() * palavras.length)].toUpperCase()
         setPalavraEscolhida(novaPalavra)
-        console.log(novaPalavra)
         setPalavraEmJogo(novaPalavra.split("").map((l) => "_"))
         setNumErros(0)
         setLetrasTestadas([])
@@ -33,19 +32,22 @@ export default function App() {
     function checkLetra(letra) {
         const letraMaiuscula = letra.toUpperCase()
         let novaPalavraEmJogo = [...palavraEmJogo]
-        if (palavraEscolhida.split("").includes(letraMaiuscula)) {
+        if ((removeDiacritics(palavraEscolhida)).split("").includes(letraMaiuscula)) {
             novaPalavraEmJogo = [...palavraEscolhida.split("").map((l, index) => removeDiacritics(l) === letraMaiuscula ? palavraEscolhida.split("")[index] : palavraEmJogo[index])]
             setPalavraEmJogo(novaPalavraEmJogo)
-            console.log(novaPalavraEmJogo)
         } else {
             setNumErros(numErros + 1)
         }
         setLetrasTestadas([...letrasTestadas, letra])
-        novaPalavraEmJogo.join(" ") === palavraEscolhida.split("").join(" ") ? ganhou() : (numErros + 1 === 6 ? perdeu() : console.log("Próxima letra"))
+
+        if (novaPalavraEmJogo.join(" ") === palavraEscolhida.split("").join(" ")) {
+            ganhou()
+        } else if (numErros + 1 === 6) {
+            perdeu()
+        }
     }
 
     function ganhou() {
-        console.log("Venceu!")
         setCorPalavraEmJogo("green")
         setPalavraEmJogo([...palavraEscolhida.split("")])
         setLetrasTestadas(alfabeto)
@@ -54,7 +56,6 @@ export default function App() {
     }
 
     function perdeu() {
-        console.log("Perdeu!")
         setCorPalavraEmJogo("red")
         setPalavraEmJogo([...palavraEscolhida.split("")])
         setNumErros(6)
@@ -130,7 +131,7 @@ const BotaoEscolherPalavra = styled.button`
     margin-top: 35px;
     margin-bottom: 20px;
     &:hover {
-        filter: brightness(0.9);
+        filter: brightness(1.2);
         cursor: pointer;
       }
 `
@@ -171,11 +172,11 @@ const BotaoLetra = styled.button`
     border-radius: 10px;
     border: 3px solid #49799E;
     &:hover {
-        filter: brightness(0.9);
+        filter: brightness(1.1);
         cursor: pointer;
     }
     &:disabled {
-        filter: brightness(0.9);
+        filter: brightness(0.8);
         cursor: default;
     }
 `
@@ -202,11 +203,11 @@ const BotaoChutar = styled.button`
     width: 110px;
     height: 30px;
     &:hover {
-        filter: brightness(0.9);
+        filter: brightness(1.2);
         cursor: pointer;
     }
     &:disabled {
-        filter: brightness(0.9);
+        filter: brightness(0.8);
         cursor: default;
     }
 `
